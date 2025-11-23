@@ -13,11 +13,41 @@ import {
 import { useEffect, useState } from 'react';
 import type { SavingsProduct } from '../types/savings';
 import { getSavingsProducts } from '../api/savingsApi';
+import { formatNumber, parseFormattedNumber } from '../utils/format';
 
 export function SavingsCalculatorPage() {
   const [products, setProducts] = useState<SavingsProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [targetAmount, setTargetAmount] = useState('');
+  const [monthlyAmount, setMonthlyAmount] = useState('');
+  const [savingsTerms, setSavingsTerms] = useState<number>(12);
+
+  const handleTargetAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatNumber(e.target.value);
+    setTargetAmount(formattedValue);
+  };
+
+  const handleMonthlyAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatNumber(e.target.value);
+    setMonthlyAmount(formattedValue);
+  };
+
+  const filteredProducts = products.filter(product => {
+    if (monthlyAmount) {
+      const monthlyAmountNumber = parseFormattedNumber(monthlyAmount);
+      if (monthlyAmountNumber < product.minMonthlyAmount || monthlyAmountNumber > product.maxMonthlyAmount) {
+        return false;
+      }
+    }
+
+    if (product.availableTerms !== savingsTerms) {
+      return false;
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -41,13 +71,31 @@ export function SavingsCalculatorPage() {
 
       <Spacing size={16} />
 
-      <TextField label="목표 금액" placeholder="목표 금액을 입력하세요" suffix="원" />
+      <TextField
+        label="목표 금액"
+        placeholder="목표 금액을 입력하세요"
+        suffix="원"
+        value={targetAmount}
+        onChange={handleTargetAmountChange}
+      />
       <Spacing size={16} />
-      <TextField label="월 납입액" placeholder="희망 월 납입액을 입력하세요" suffix="원" />
+      <TextField
+        label="월 납입액"
+        placeholder="희망 월 납입액을 입력하세요"
+        suffix="원"
+        value={monthlyAmount}
+        onChange={handleMonthlyAmountChange}
+      />
       <Spacing size={16} />
-      <SelectBottomSheet label="저축 기간" title="저축 기간을 선택해주세요" value={12} onChange={() => {}}>
+      <SelectBottomSheet
+        label="저축 기간"
+        title="저축 기간을 선택해주세요"
+        value={savingsTerms}
+        onChange={setSavingsTerms}
+      >
         <SelectBottomSheet.Option value={6}>6개월</SelectBottomSheet.Option>
         <SelectBottomSheet.Option value={12}>12개월</SelectBottomSheet.Option>
+        <SelectBottomSheet.Option value={18}>18개월</SelectBottomSheet.Option>
         <SelectBottomSheet.Option value={24}>24개월</SelectBottomSheet.Option>
       </SelectBottomSheet>
 
@@ -68,8 +116,10 @@ export function SavingsCalculatorPage() {
         <ListRow contents={<ListRow.Texts type="1RowTypeA" top="상품을 불러오고 있어요" />} />
       ) : error ? (
         <ListRow contents={<ListRow.Texts type="1RowTypeA" top={error} />} />
+      ) : filteredProducts.length === 0 ? (
+        <ListRow contents={<ListRow.Texts type="1RowTypeA" top="조건에 맞는 상품이 없어요" />} />
       ) : (
-        products.map(product => (
+        filteredProducts.map(product => (
           <ListRow
             key={product.id}
             contents={
