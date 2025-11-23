@@ -23,6 +23,7 @@ export function SavingsCalculatorPage() {
   const [targetAmount, setTargetAmount] = useState('');
   const [monthlyAmount, setMonthlyAmount] = useState('');
   const [savingsTerms, setSavingsTerms] = useState<number>(12);
+  const [selectedProduct, setSelectedProduct] = useState<SavingsProduct | null>(null);
 
   const handleTargetAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formattedValue = formatNumber(e.target.value);
@@ -32,6 +33,14 @@ export function SavingsCalculatorPage() {
   const handleMonthlyAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formattedValue = formatNumber(e.target.value);
     setMonthlyAmount(formattedValue);
+  };
+
+  const handleProductSelect = (product: SavingsProduct) => {
+    if (selectedProduct?.id === product.id) {
+      setSelectedProduct(null);
+    } else {
+      setSelectedProduct(product);
+    }
   };
 
   const filteredProducts = products.filter(product => {
@@ -133,8 +142,14 @@ export function SavingsCalculatorPage() {
                 bottomProps={{ fontSize: 13, color: colors.grey600 }}
               />
             }
-            right={<Assets.Icon name="icon-check-circle-green" />}
-            onClick={() => {}}
+            right={
+              selectedProduct?.id === product.id ? (
+                <Assets.Icon name="icon-check-circle-green" />
+              ) : (
+                <Assets.Icon name="icon-check-circle-grey" />
+              )
+            }
+            onClick={() => handleProductSelect(product)}
           />
         ))
       )}
