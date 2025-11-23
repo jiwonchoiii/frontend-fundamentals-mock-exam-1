@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import type { SavingsProduct } from '../types/savings';
 import { getSavingsProducts } from '../api/savingsApi';
 import { formatNumber, parseFormattedNumber } from '../utils/format';
+import { CalculationResult } from '../components/CalculationResult';
 
 export function SavingsCalculatorPage() {
   const [products, setProducts] = useState<SavingsProduct[]>([]);
@@ -24,6 +25,7 @@ export function SavingsCalculatorPage() {
   const [monthlyAmount, setMonthlyAmount] = useState('');
   const [savingsTerms, setSavingsTerms] = useState<number>(12);
   const [selectedProduct, setSelectedProduct] = useState<SavingsProduct | null>(null);
+  const [activeTab, setActiveTab] = useState<'products' | 'results'>('products');
 
   const handleTargetAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formattedValue = formatNumber(e.target.value);
@@ -41,6 +43,10 @@ export function SavingsCalculatorPage() {
     } else {
       setSelectedProduct(product);
     }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'products' | 'results');
   };
 
   const filteredProducts = products.filter(product => {
@@ -112,125 +118,58 @@ export function SavingsCalculatorPage() {
       <Border height={16} />
       <Spacing size={8} />
 
-      <Tab onChange={() => {}}>
-        <Tab.Item value="products" selected={true}>
+      <Tab onChange={handleTabChange}>
+        <Tab.Item value="products" selected={activeTab === 'products'}>
           적금 상품
         </Tab.Item>
-        <Tab.Item value="results" selected={false}>
+        <Tab.Item value="results" selected={activeTab === 'results'}>
           계산 결과
         </Tab.Item>
       </Tab>
 
-      {loading ? (
-        <ListRow contents={<ListRow.Texts type="1RowTypeA" top="상품을 불러오고 있어요" />} />
-      ) : error ? (
-        <ListRow contents={<ListRow.Texts type="1RowTypeA" top={error} />} />
-      ) : filteredProducts.length === 0 ? (
-        <ListRow contents={<ListRow.Texts type="1RowTypeA" top="조건에 맞는 상품이 없어요" />} />
-      ) : (
-        filteredProducts.map(product => (
-          <ListRow
-            key={product.id}
-            contents={
-              <ListRow.Texts
-                type="3RowTypeA"
-                top={product.name}
-                topProps={{ fontSize: 16, fontWeight: 'bold', color: colors.grey900 }}
-                middle={`연 이자율: ${product.annualRate}%`}
-                middleProps={{ fontSize: 14, color: colors.blue600, fontWeight: 'medium' }}
-                bottom={`${product.minMonthlyAmount.toLocaleString()}원 ~ ${product.maxMonthlyAmount.toLocaleString()}원 | ${product.availableTerms}개월`}
-                bottomProps={{ fontSize: 13, color: colors.grey600 }}
+      {activeTab === 'products' ? (
+        <>
+          {loading ? (
+            <ListRow contents={<ListRow.Texts type="1RowTypeA" top="상품을 불러오고 있어요" />} />
+          ) : error ? (
+            <ListRow contents={<ListRow.Texts type="1RowTypeA" top={error} />} />
+          ) : filteredProducts.length === 0 ? (
+            <ListRow contents={<ListRow.Texts type="1RowTypeA" top="조건에 맞는 상품이 없어요" />} />
+          ) : (
+            filteredProducts.map(product => (
+              <ListRow
+                key={product.id}
+                contents={
+                  <ListRow.Texts
+                    type="3RowTypeA"
+                    top={product.name}
+                    topProps={{ fontSize: 16, fontWeight: 'bold', color: colors.grey900 }}
+                    middle={`연 이자율: ${product.annualRate}%`}
+                    middleProps={{ fontSize: 14, color: colors.blue600, fontWeight: 'medium' }}
+                    bottom={`${product.minMonthlyAmount.toLocaleString()}원 ~ ${product.maxMonthlyAmount.toLocaleString()}원 | ${product.availableTerms}개월`}
+                    bottomProps={{ fontSize: 13, color: colors.grey600 }}
+                  />
+                }
+                right={
+                  selectedProduct?.id === product.id ? (
+                    <Assets.Icon name="icon-check-circle-green" />
+                  ) : (
+                    <Assets.Icon name="icon-check-circle-grey" />
+                  )
+                }
+                onClick={() => handleProductSelect(product)}
               />
-            }
-            right={
-              selectedProduct?.id === product.id ? (
-                <Assets.Icon name="icon-check-circle-green" />
-              ) : (
-                <Assets.Icon name="icon-check-circle-grey" />
-              )
-            }
-            onClick={() => handleProductSelect(product)}
-          />
-        ))
+            ))
+          )}
+        </>
+      ) : (
+        <CalculationResult
+          selectedProduct={selectedProduct}
+          targetAmount={targetAmount}
+          monthlyAmount={monthlyAmount}
+          savingsTerms={savingsTerms}
+        />
       )}
-
-      {/* 아래는 계산 결과 탭 내용이에요. 계산 결과 탭을 구현할 때 주석을 해제해주세요. */}
-      {/* <Spacing size={8} />
-
-      <ListRow
-        contents={
-          <ListRow.Texts
-            type="2RowTypeA"
-            top="예상 수익 금액"
-            topProps={{ color: colors.grey600 }}
-            bottom={`1,000,000원`}
-            bottomProps={{ fontWeight: 'bold', color: colors.blue600 }}
-          />
-        }
-      />
-      <ListRow
-        contents={
-          <ListRow.Texts
-            type="2RowTypeA"
-            top="목표 금액과의 차이"
-            topProps={{ color: colors.grey600 }}
-            bottom={`-500,000원`}
-            bottomProps={{ fontWeight: 'bold', color: colors.blue600 }}
-          />
-        }
-      />
-      <ListRow
-        contents={
-          <ListRow.Texts
-            type="2RowTypeA"
-            top="추천 월 납입 금액"
-            topProps={{ color: colors.grey600 }}
-            bottom={`100,000원`}
-            bottomProps={{ fontWeight: 'bold', color: colors.blue600 }}
-          />
-        }
-      />
-
-      <Spacing size={8} />
-      <Border height={16} />
-      <Spacing size={8} />
-
-      <ListHeader title={<ListHeader.TitleParagraph fontWeight="bold">추천 상품 목록</ListHeader.TitleParagraph>} />
-      <Spacing size={12} />
-
-      <ListRow
-        contents={
-          <ListRow.Texts
-            type="3RowTypeA"
-            top={'기본 정기적금'}
-            topProps={{ fontSize: 16, fontWeight: 'bold', color: colors.grey900 }}
-            middle={`연 이자율: 3.2%`}
-            middleProps={{ fontSize: 14, color: colors.blue600, fontWeight: 'medium' }}
-            bottom={`100,000원 ~ 500,000원 | 12개월`}
-            bottomProps={{ fontSize: 13, color: colors.grey600 }}
-          />
-        }
-        onClick={() => {}}
-      />
-      <ListRow
-        contents={
-          <ListRow.Texts
-            type="3RowTypeA"
-            top={'고급 정기적금'}
-            topProps={{ fontSize: 16, fontWeight: 'bold', color: colors.grey900 }}
-            middle={`연 이자율: 2.8%`}
-            middleProps={{ fontSize: 14, color: colors.blue600, fontWeight: 'medium' }}
-            bottom={`50,000원 ~ 1,000,000원 | 24개월`}
-            bottomProps={{ fontSize: 13, color: colors.grey600 }}
-          />
-        }
-        onClick={() => {}}
-      />
-
-      <Spacing size={40} /> */}
-
-      {/* 아래는 사용자가 적금 상품을 선택하지 않고 계산 결과 탭을 선택했을 때 출력해주세요. */}
-      {/* <ListRow contents={<ListRow.Texts type="1RowTypeA" top="상품을 선택해주세요." />} /> */}
     </>
   );
 }
