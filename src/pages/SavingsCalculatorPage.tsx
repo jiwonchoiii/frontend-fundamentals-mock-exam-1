@@ -15,6 +15,7 @@ import type { SavingsProduct } from '../types/savings';
 import { getSavingsProducts } from '../api/savingsApi';
 import { formatNumber, parseFormattedNumber } from '../utils/format';
 import { CalculationResult } from '../components/CalculationResult';
+import { RecommendedProducts } from '../components/RecommendedProducts';
 
 export function SavingsCalculatorPage() {
   const [products, setProducts] = useState<SavingsProduct[]>([]);
@@ -163,12 +164,22 @@ export function SavingsCalculatorPage() {
           )}
         </>
       ) : (
-        <CalculationResult
-          selectedProduct={selectedProduct}
-          targetAmount={targetAmount}
-          monthlyAmount={monthlyAmount}
-          savingsTerms={savingsTerms}
-        />
+        <>
+          <CalculationResult
+            selectedProduct={selectedProduct}
+            targetAmount={targetAmount}
+            monthlyAmount={monthlyAmount}
+            savingsTerms={savingsTerms}
+          />
+          <Border height={16} />
+          <RecommendedProducts
+            allProducts={products}
+            monthlyAmount={monthlyAmount}
+            savingsTerms={savingsTerms}
+            selectedProduct={selectedProduct}
+            onProductSelect={handleProductSelect}
+          />
+        </>
       )}
     </>
   );
